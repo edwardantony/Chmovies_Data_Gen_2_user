@@ -284,7 +284,7 @@ const schema = a.schema({
       name: a.string(),
     })
     .returns(a.string())
-    .authorization(allow => [allow.guest()])
+    .authorization(allow => [allow.publicApiKey()])
     .handler(a.handler.function(sayHello)),
 
 }).authorization(allow => [allow.authenticated()]);
