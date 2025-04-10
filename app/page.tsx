@@ -1,13 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { generateClient } from "aws-amplify/data";
+//import { generateClient } from "aws-amplify/data";
 import type { Schema } from "@/amplify/data/resource";
 import { Amplify } from "aws-amplify";
 import outputs from "@/amplify_outputs.json";
 import { Authenticator } from "@aws-amplify/ui-react";
 import "@aws-amplify/ui-react/styles.css";
 import "./../app/app.css";
+//import { handleSubscriptionLifecycle } from "@/amplify/functions/UserSubscriptions/handleSubscriptionLifecycle/resource";
+
+import { generateClient } from 'aws-amplify/api';
 
 Amplify.configure(outputs);
 
@@ -29,9 +32,9 @@ function AppContent() {
   function createTodo() {
     const username = window.prompt("Add username");
     const cognitoId = window.prompt("cognitoId Year");
-    const email = parseInt(window.prompt("Add email") || "");
+    const email = window.prompt("Add email");
   
-    if (!username || !cognitoId || isNaN(email)) return;
+    if (!username || !cognitoId || !email) return;
   
     client.models.Users.create({
       username,
@@ -39,12 +42,16 @@ function AppContent() {
       email,
     } as any);
   }
-  
+
+
+  console.log("QUERY: ", client);
+
 
   return (
     <main>
       <h1>Create New User</h1>
       <button onClick={createTodo}>+ new</button>
+      
       <ul>
         {users.map((user) => (
           <li key={user?.id}>{user?.username} ------ {user?.cognitoId} ------ {user?.email}</li>

@@ -1,4 +1,5 @@
 import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
+import { subscriptionLifecycle } from '../functions/UserSubscriptions/SubscriptionLifecycle/resource';
 
 const schema = a.schema({
   Users: a.model({
@@ -275,6 +276,16 @@ const schema = a.schema({
     allow.groups(['Admin']),
     allow.group('Moderator').to(['read', 'update'])
   ]),
+
+
+
+    
+  subscriptionLifecycle: a
+    .query()
+    .returns(a.string())
+    .authorization(allow => [allow.guest()])
+    .handler(a.handler.function(subscriptionLifecycle)),
+
 
 }).authorization(allow => [allow.authenticated()]);
 
