@@ -14,11 +14,11 @@ Amplify.configure(outputs);
 const client = generateClient<Schema>();
 
 function AppContent() {
-  const [contents, setContents] = useState<Array<Schema["Titles"]["type"]>>([]);
+  const [users, setUsers] = useState<Array<Schema["Users"]["type"]>>([]);
 
   function listTodos() {
-    client.models.Titles.observeQuery().subscribe({
-      next: (data) => setContents([...data.items]),
+    client.models.Users.observeQuery().subscribe({
+      next: (data) => setUsers([...data.items]),
     });
   }
 
@@ -27,27 +27,27 @@ function AppContent() {
   }, []);
 
   function createTodo() {
-    const titleName = window.prompt("Add Title");
-    const releaseYear = window.prompt("Release Year");
-    const sortOrder = parseInt(window.prompt("Add Sort Order") || "9");
+    const username = window.prompt("Add username");
+    const cognitoId = window.prompt("cognitoId Year");
+    const email = parseInt(window.prompt("Add email") || "");
   
-    if (!titleName || !releaseYear || isNaN(sortOrder)) return;
+    if (!username || !cognitoId || isNaN(email)) return;
   
-    client.models.Titles.create({
-      titleName,
-      releaseYear,
-      sortOrder,
+    client.models.Users.create({
+      username,
+      cognitoId,
+      email,
     } as any);
   }
   
 
   return (
     <main>
-      <h1>Create New Titles</h1>
+      <h1>Create New User</h1>
       <button onClick={createTodo}>+ new</button>
       <ul>
-        {contents.map((content) => (
-          <li key={content.id}>{content.titleName} ------ {content.releaseYear} ------ {content.sortOrder}</li>
+        {users.map((user) => (
+          <li key={user?.id}>{user?.username} ------ {user?.cognitoId} ------ {user?.email}</li>
         ))}
       </ul>
     </main>
