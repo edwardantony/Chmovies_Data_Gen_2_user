@@ -23,6 +23,7 @@ const schema = a.schema({
     // Relationships
     userProfiles: a.hasMany('UserProfiles', 'userId'),
     userSubscriptions: a.hasMany('UserSubscriptions', 'userId'),
+    userPayments: a.hasMany('UserPayments', 'userId'),
     userFavorites: a.hasMany('UserFavorites', 'userId'),
     userReviews: a.hasMany('UserReviews', 'userId'),
     userReactions: a.hasMany('UserReactions', 'userId'),
