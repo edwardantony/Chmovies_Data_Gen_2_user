@@ -8,7 +8,7 @@ import outputs from "@/amplify_outputs.json";
 import { Authenticator } from "@aws-amplify/ui-react";
 import "@aws-amplify/ui-react/styles.css";
 import "./../app/app.css";
-import { subscriptionLifecycle } from '@/amplify/functions/UserSubscriptions/SubscriptionLifecycle/resource'
+//import { sayHello } from '@/amplify/functions/say-hello/resource'
 
 
 import { generateClient } from 'aws-amplify/api';
@@ -46,13 +46,8 @@ function AppContent() {
   }
 
   async function callFunction() {
-    const res = await fetch(subscriptionLifecycle, {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({}),
-    });
-    const json = await res.json();
-    console.log("Function response:", json);
+    const res = await client.queries.sayHello({name: "Amplfy"});
+    console.log("Function response:", res);
   }
 
 
