@@ -62,7 +62,7 @@ const schema = a.schema({
   UserSubscriptions: a.model({
     id: a.id().required(),
     userId: a.id().required(),
-    sourcePaymentId: a.string(),
+    userInvoiceId: a.string(),
     titleId: a.string().required(),
     subscriptionPlan: a.json(),
     startDate: a.date().required(),
@@ -83,7 +83,7 @@ const schema = a.schema({
     // Relationships
     user: a.belongsTo('Users', 'userId'),
     userPayments: a.hasMany('UserPayments', 'userSubscriptionId'),
-    userInvoices: a.hasMany('UserInvoices', 'userSubscriptionId')
+    userInvoices: a.hasMany('UserInvoices', 'userInvoiceId')
   })
   .secondaryIndexes(index => [
     index('userId').name('byUser'),
@@ -101,7 +101,7 @@ const schema = a.schema({
   UserPayments: a.model({
     id: a.id().required(),
     userId: a.id().required(),
-    subscriptionPlanId: a.id(),
+    userSubscriptionId: a.id(),
     type: a.enum(['CableTV', 'OTT', 'Other']),
     amount: a.float().required(),
     currency: a.string(),
