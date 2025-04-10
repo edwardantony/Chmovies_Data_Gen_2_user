@@ -8,7 +8,8 @@ import outputs from "@/amplify_outputs.json";
 import { Authenticator } from "@aws-amplify/ui-react";
 import "@aws-amplify/ui-react/styles.css";
 import "./../app/app.css";
-//import { handleSubscriptionLifecycle } from "@/amplify/functions/UserSubscriptions/handleSubscriptionLifecycle/resource";
+import { subscriptionLifecycle } from '@/amplify/functions/UserSubscriptions/SubscriptionLifecycle/resource'
+
 
 import { generateClient } from 'aws-amplify/api';
 
@@ -18,6 +19,7 @@ const client = generateClient<Schema>();
 
 function AppContent() {
   const [users, setUsers] = useState<Array<Schema["Users"]["type"]>>([]);
+  
 
   function listTodos() {
     client.models.Users.observeQuery().subscribe({
@@ -43,8 +45,18 @@ function AppContent() {
     } as any);
   }
 
+  async function callFunction() {
+    const res = await fetch(subscriptionLifecycle, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
+    const json = await res.json();
+    console.log("Function response:", json);
+  }
 
-  console.log("QUERY: ", client);
+
+  callFunction();
 
 
   return (
