@@ -62,7 +62,8 @@ const schema = a.schema({
   UserSubscriptions: a.model({
     id: a.id().required(),
     userId: a.id().required(),
-    userInvoiceId: a.string(),
+    userPaymentId: a.string(),
+    userSubscriptionId: a.string(),
     titleId: a.string().required(),
     subscriptionPlan: a.json(),
     startDate: a.date().required(),
@@ -83,7 +84,7 @@ const schema = a.schema({
     // Relationships
     user: a.belongsTo('Users', 'userId'),
     userPayments: a.hasMany('UserPayments', 'userSubscriptionId'),
-    userInvoices: a.hasMany('UserInvoices', 'userInvoiceId')
+    userInvoices: a.hasMany('UserInvoices', 'userSubscriptionId'),
   })
   .secondaryIndexes(index => [
     index('userId').name('byUser'),
@@ -118,7 +119,7 @@ const schema = a.schema({
     // Relationships
     user: a.belongsTo('Users', 'userId'),
     userSubscription: a.belongsTo('UserSubscriptions', 'userSubscriptionId'),
-    userInvoices: a.hasMany('UserInvoices', 'paymentId')
+    userInvoices: a.hasMany('UserInvoices', 'paymentId'), 
   })
   .secondaryIndexes((index) => [
     index('userId').name('byUser'),
@@ -152,7 +153,7 @@ const schema = a.schema({
     // Relationships
     user: a.belongsTo('Users', 'userId'),
     userSubscription: a.belongsTo('UserSubscriptions', 'userSubscriptionId'),
-    payment: a.belongsTo('UserPayments', 'paymentId')
+    payment: a.belongsTo('UserPayments', 'paymentId'),
   })
   .secondaryIndexes((index) => [
     index('userId').name('byUser'),
