@@ -1,7 +1,6 @@
 import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
 
 const schema = a.schema({
-
   Users: a.model({
     id: a.id().required(),
     cognitoId: a.string().required(),
@@ -21,24 +20,21 @@ const schema = a.schema({
     createdAt: a.datetime(),
     updatedAt: a.datetime(),
     
-  //  Relationships (will be connected in later phases)
-    userFavorites: a.hasMany('UserFavorites', 'userId'),
-    invoices: a.hasMany('Invoices', 'userId'),
-    logs: a.hasMany('Logs', 'userId'),
-    notifications: a.hasMany('Notifications', 'userId'),
-    payments: a.hasMany('Payments', 'userId'),
-    userReviews: a.hasMany('UserReviews', 'userId'),
+    // Relationships
     userProfiles: a.hasMany('UserProfiles', 'userId'),
-    userReactions: a.hasMany('UserReactions', 'userId'),
     userSubscriptions: a.hasMany('UserSubscriptions', 'userId'),
-    userWatchHistories: a.hasMany('UserWatchHistories', 'userId')
+    userFavorites: a.hasMany('UserFavorites', 'userId'),
+    userReviews: a.hasMany('UserReviews', 'userId'),
+    userReactions: a.hasMany('UserReactions', 'userId'),
+    userWatchHistories: a.hasMany('UserWatchHistories', 'userId'),
+    userLogs: a.hasMany('UserLogs', 'userId'),
+    userNotifications: a.hasMany('UserNotifications', 'userId')
   })
   .authorization(allow => [
     allow.owner(),
-    allow.group('Admin'),
+    allow.groups(['Admin']),
     allow.group('Moderator').to(['read', 'update'])
   ]),
-
 
   UserProfiles: a.model({
     id: a.id().required(),
@@ -59,15 +55,16 @@ const schema = a.schema({
   ])
   .authorization(allow => [
     allow.owner(),
-    allow.group('Admin'),
+    allow.groups(['Admin']),
     allow.group('Moderator').to(['read', 'update'])
   ]),
 
   UserSubscriptions: a.model({
     id: a.id().required(),
     userId: a.id().required(),
-    planId: a.id().required(),
-    titleId: a.id(),
+    sourcePaymentId: a.string(),
+    titleId: a.string().required(),
+    subscriptionPlan: a.json(),
     startDate: a.date().required(),
     endDate: a.date().required(),
     type: a.enum(['CableTV', 'OTT']),
@@ -85,18 +82,15 @@ const schema = a.schema({
     
     // Relationships
     user: a.belongsTo('Users', 'userId'),
-    plan: a.belongsTo('SubscriptionPlans', 'planId'),
-    title: a.belongsTo('Titles', 'titleId'),
-    invoices: a.hasMany('Invoices', 'userSubscriptionId'),
-    payments: a.hasMany('Payments', 'userSubscriptionId'),
+    userPayments: a.hasMany('UserPayments', 'userSubscriptionId'),
+    userInvoices: a.hasMany('UserInvoices', 'userSubscriptionId')
   })
   .secondaryIndexes(index => [
     index('userId').name('byUser'),
-    index('planId').name('byPlan'),
-    index('titleId').name('byTitle'),
     index('status').name('byStatus'),
     index('endDate').name('byExpiration'),
-    index('type').name('byType')
+    index('type').name('byType'),
+    index('createdAt').name('byDate'),
   ])
   .authorization(allow => [
     allow.owner(),
@@ -107,9 +101,10 @@ const schema = a.schema({
   UserPayments: a.model({
     id: a.id().required(),
     userId: a.id().required(),
-    userSubscriptionId: a.id(),
+    subscriptionPlanId: a.id(),
+    type: a.enum(['CableTV', 'OTT', 'Other']),
     amount: a.float().required(),
-    currency: a.string().default('USD'),
+    currency: a.string(),
     paymentMethod: a.string().required(),
     paymentGateway: a.string().required(),
     transactionId: a.string().required(),
@@ -123,11 +118,15 @@ const schema = a.schema({
     // Relationships
     user: a.belongsTo('Users', 'userId'),
     userSubscription: a.belongsTo('UserSubscriptions', 'userSubscriptionId'),
-    invoices: a.hasMany('Invoices', 'paymentId')
+    userInvoices: a.hasMany('UserInvoices', 'paymentId')
   })
+  .secondaryIndexes((index) => [
+    index('userId').name('byUser'),
+    index('createdAt').name('byDate'),
+  ])
   .authorization(allow => [
     allow.owner(),
-    allow.group('Admin'),
+    allow.groups(['Admin']),
     allow.group('Moderator').to(['read', 'update'])
   ]),
 
@@ -138,7 +137,7 @@ const schema = a.schema({
     paymentId: a.id(),
     invoiceNumber: a.string().required(),
     amount: a.float().required(),
-    currency: a.string().default('USD'),
+    currency: a.string(),
     taxAmount: a.float(),
     discountAmount: a.float(),
     totalAmount: a.float().required(),
@@ -151,36 +150,39 @@ const schema = a.schema({
     updatedAt: a.datetime(),
     
     // Relationships
-     user: a.belongsTo('Users', 'userId'),
-     userSubscription: a.belongsTo('UserSubscriptions', 'userSubscriptionId'),
-     payment: a.belongsTo('Payments', 'paymentId')
+    user: a.belongsTo('Users', 'userId'),
+    userSubscription: a.belongsTo('UserSubscriptions', 'userSubscriptionId'),
+    payment: a.belongsTo('UserPayments', 'paymentId')
   })
+  .secondaryIndexes((index) => [
+    index('userId').name('byUser'),
+    index('createdAt').name('byDate'),
+  ])
   .authorization(allow => [
     allow.owner(),
-    allow.group('Admin'),
+    allow.groups(['Admin']),
     allow.group('Moderator').to(['read', 'update'])
   ]),
 
   UserFavorites: a.model({
     id: a.id().required(),
     userId: a.id().required(),
-    titleId: a.id().required(),
+    titleId: a.string().required(),
     createdAt: a.datetime(),
 
     // Relationships
-    user: a.belongsTo('Users', 'userId'),
-    title: a.belongsTo('Titles', 'titleId')
+    user: a.belongsTo('Users', 'userId')
   })
   .authorization(allow => [
     allow.owner(),
-    allow.group('Admin'),
+    allow.groups(['Admin']),
     allow.group('Moderator').to(['read', 'update'])
   ]),
 
   UserReviews: a.model({
     id: a.id().required(),
     userId: a.id().required(),
-    titleId: a.id().required(),
+    titleId: a.string().required(),
     rating: a.integer().required(),
     reviewText: a.string(),
     isApproved: a.boolean().default(false),
@@ -188,36 +190,33 @@ const schema = a.schema({
     updatedAt: a.datetime(),
 
     // Relationships
-    user: a.belongsTo('Users', 'userId'),
-    title: a.belongsTo('Titles', 'titleId')
+    user: a.belongsTo('Users', 'userId')
   })
   .authorization(allow => [
     allow.owner(),
-    allow.group('Admin'),
+    allow.groups(['Admin']),
     allow.group('Moderator').to(['read', 'update'])
   ]),
 
   UserReactions: a.model({
     id: a.id().required(),
     userId: a.id().required(),
-    titleId: a.id().required(),
+    titleId: a.string().required(),
     reactionType: a.enum(['Like', 'Dislike']),
     createdAt: a.datetime(),
     // Relationships
-    user: a.belongsTo('Users', 'userId'),
-    title: a.belongsTo('Titles', 'titleId')
+    user: a.belongsTo('Users', 'userId')
   })
   .authorization(allow => [
     allow.owner(),
-    allow.group('Admin'),
+    allow.groups(['Admin']),
     allow.group('Moderator').to(['read', 'update'])
   ]),
-
 
   UserWatchHistories: a.model({
     id: a.id().required(),
     userId: a.id().required(),
-    titleId: a.id().required(),
+    titleId: a.string().required(),
     progress: a.integer().required(),
     duration: a.integer().required(),
     lastWatchedAt: a.datetime().required(),
@@ -225,12 +224,11 @@ const schema = a.schema({
     createdAt: a.datetime(),
     updatedAt: a.datetime(),
     // Relationships
-    user: a.belongsTo('Users', 'userId'),
-    title: a.belongsTo('Titles', 'titleId')
+    user: a.belongsTo('Users', 'userId')
   })
   .authorization(allow => [
     allow.owner(),
-    allow.group('Admin'),
+    allow.groups(['Admin']),
     allow.group('Moderator').to(['read', 'update'])
   ]),
 
@@ -250,7 +248,7 @@ const schema = a.schema({
   })
   .authorization(allow => [
     allow.owner(),
-    allow.group('Admin'),
+    allow.groups(['Admin']),
     allow.group('Moderator').to(['read', 'update'])
   ]),
 
@@ -271,24 +269,20 @@ const schema = a.schema({
   })
   .authorization(allow => [
     allow.owner(),
-    allow.group('Admin'),
+    allow.groups(['Admin']),
     allow.group('Moderator').to(['read', 'update'])
   ]),
 
-  }).authorization(allow => [allow.authenticated()]);
+}).authorization(allow => [allow.authenticated()]);
 
+export type Schema = ClientSchema<typeof schema>;
 
-
-
-  
-  export type Schema = ClientSchema<typeof schema>;
-  
-  export const data = defineData({
-    schema,
-    authorizationModes: {
-      defaultAuthorizationMode: "apiKey",
-      apiKeyAuthorizationMode: {
-        expiresInDays: 30,
-      },
+export const data = defineData({
+  schema,
+  authorizationModes: {
+    defaultAuthorizationMode: "apiKey",
+    apiKeyAuthorizationMode: {
+      expiresInDays: 30,
     },
-  });
+  },
+});
