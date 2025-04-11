@@ -1,4 +1,7 @@
 import { defineAuth } from '@aws-amplify/backend';
+import { defineAuthChallenge } from '../functions/auth/defineAuthChallenge/resource';
+import { createAuthChallenge } from '../functions/auth/createAuthChallenge/resource';
+import { verifyAuthChallengeResponse } from '../functions/auth/verifyAuthChallengeResponse/resource';
 
 export const auth = defineAuth({
   loginWith: {
@@ -13,5 +16,10 @@ export const auth = defineAuth({
   userAttributes: {
     email: { required: true },
     phoneNumber: { required: true }
+  },
+  triggers: {
+    defineAuthChallenge,
+    createAuthChallenge,
+    verifyAuthChallengeResponse,
   },
 });
