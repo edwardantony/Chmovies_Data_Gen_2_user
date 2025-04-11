@@ -1,5 +1,4 @@
 import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
-import { sayHello } from '../functions/say-hello/resource';
 
 const schema = a.schema({
   Users: a.model({
@@ -277,15 +276,7 @@ const schema = a.schema({
     allow.group('Moderator').to(['read', 'update'])
   ]),
 
-  
-  sayHello: a
-    .query()
-    .arguments({
-      name: a.string(),
-    })
-    .returns(a.string())
-    .authorization(allow => [allow.publicApiKey()])
-    .handler(a.handler.function(sayHello)),
+
 
 }).authorization(allow => [allow.authenticated()]);
 

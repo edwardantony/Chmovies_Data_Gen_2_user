@@ -1,88 +1,96 @@
-"use client";
+// "use client";
 
-import { useState, useEffect } from "react";
-//import { generateClient } from "aws-amplify/data";
-import type { Schema } from "@/amplify/data/resource";
-import { Amplify } from "aws-amplify";
-import outputs from "@/amplify_outputs.json";
-import { Authenticator } from "@aws-amplify/ui-react";
-import "@aws-amplify/ui-react/styles.css";
-import "./../app/app.css";
-//import { sayHello } from '@/amplify/functions/say-hello/resource'
+// import { useState, useEffect } from "react";
+// //import { generateClient } from "aws-amplify/data";
+// import type { Schema } from "@/amplify/data/resource";
+// import { Amplify } from "aws-amplify";
+// import outputs from "@/amplify_outputs.json";
+// import { Authenticator } from "@aws-amplify/ui-react";
+// import "@aws-amplify/ui-react/styles.css";
+// import "./../app/app.css";
+// //import { sayHello } from '@/amplify/functions/say-hello/resource'
 
 
-import { generateClient } from 'aws-amplify/api';
+// import { generateClient } from 'aws-amplify/api';
 
-Amplify.configure(outputs);
+// Amplify.configure(outputs);
 
-const client = generateClient<Schema>();
+// const client = generateClient<Schema>();
 
-function AppContent() {
-  const [users, setUsers] = useState<Array<Schema["Users"]["type"]>>([]);
+// function AppContent() {
+//   const [users, setUsers] = useState<Array<Schema["Users"]["type"]>>([]);
   
 
-  function listTodos() {
-    client.models.Users.observeQuery().subscribe({
-      next: (data) => setUsers([...data.items]),
-    });
-  }
+//   function listTodos() {
+//     client.models.Users.observeQuery().subscribe({
+//       next: (data) => setUsers([...data.items]),
+//     });
+//   }
 
-  useEffect(() => {
-    listTodos();
-  }, []);
+//   useEffect(() => {
+//     listTodos();
+//   }, []);
 
-  function createTodo() {
-    const username = window.prompt("Add username");
-    const cognitoId = window.prompt("cognitoId Year");
-    const email = window.prompt("Add email");
+//   function createTodo() {
+//     const username = window.prompt("Add username");
+//     const cognitoId = window.prompt("cognitoId Year");
+//     const email = window.prompt("Add email");
   
-    if (!username || !cognitoId || !email) return;
+//     if (!username || !cognitoId || !email) return;
   
-    client.models.Users.create({
-      username,
-      cognitoId,
-      email,
-    } as any);
-  }
+//     client.models.Users.create({
+//       username,
+//       cognitoId,
+//       email,
+//     } as any);
+//   }
 
-  async function callFunction() {
-    const res = await client.queries.sayHello({name: "Amplfy"});
-    console.log("Function response:", res);
-  }
-
-
-  callFunction();
+//   async function callFunction() {
+//     const res = await client.queries.sayHello({name: "Amplfy"});
+//     console.log("Function response:", res);
+//   }
 
 
-  return (
-    <main>
-      <h1>Create New User</h1>
-      <button onClick={createTodo}>+ new</button>
+//   callFunction();
+
+
+//   return (
+//     <main>
+//       <h1>Create New User</h1>
+//       <button onClick={createTodo}>+ new</button>
       
-      <ul>
-        {users.map((user) => (
-          <li key={user?.id}>{user?.username} ------ {user?.cognitoId} ------ {user?.email}</li>
-        ))}
-      </ul>
-    </main>
-  );
-}
+//       <ul>
+//         {users.map((user) => (
+//           <li key={user?.id}>{user?.username} ------ {user?.cognitoId} ------ {user?.email}</li>
+//         ))}
+//       </ul>
+//     </main>
+//   );
+// }
 
-export default function App() {
-  return (
-    <Authenticator
-      loginMechanisms={['email', 'phone_number']}
-      signUpAttributes={['email', 'phone_number']}
-    >
-      {({ signOut, user }) => (
-        <div>
-          <header>
-            <h2>Welcome {user?.username}</h2>
-            <button onClick={signOut}>Sign out</button>
-          </header>
-          <AppContent />
-        </div>
-      )}
-    </Authenticator>
-  );
+// export default function App() {
+//   return (
+//     <Authenticator
+//       loginMechanisms={['email', 'phone_number']}
+//       signUpAttributes={['email', 'phone_number']}
+//     >
+//       {({ signOut, user }) => (
+//         <div>
+//           <header>
+//             <h2>Welcome {user?.username}</h2>
+//             <button onClick={signOut}>Sign out</button>
+//           </header>
+//           <AppContent />
+//         </div>
+//       )}
+//     </Authenticator>
+//   );
+// }
+
+
+// app/page.tsx
+import { redirect } from "next/navigation";
+
+export default function HomePage() {
+  redirect("/login");
 }

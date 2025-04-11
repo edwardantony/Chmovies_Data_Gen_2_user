@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import "./app.css";
+import { Toaster } from "react-hot-toast";
+import "@/app/globals.css";
+import { Amplify } from 'aws-amplify';
+
+import outputs from '@/amplify_outputs.json';
+
+Amplify.configure(outputs);
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -16,7 +22,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <Toaster position="top-center" />
+        {children}
+      </body>
     </html>
   );
 }
