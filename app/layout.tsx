@@ -2,11 +2,8 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import "@/app/globals.css";
-import { Amplify } from 'aws-amplify';
+import '@/app/components/auth/amplify-config';
 
-import outputs from '@/amplify_outputs.json';
-
-Amplify.configure(outputs);
 
 const inter = Inter({ subsets: ["latin"] });
 
