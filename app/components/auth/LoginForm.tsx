@@ -5,6 +5,7 @@ import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { signIn, confirmSignIn } from 'aws-amplify/auth';
 import { toast } from 'react-hot-toast';
+import '@/app/components/auth/amplify-config';
 
 export default function LoginForm() {
   const [loginType, setLoginType] = useState<'password' | 'otp'>('password');
