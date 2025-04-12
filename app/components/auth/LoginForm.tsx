@@ -1,17 +1,21 @@
-"use client";
+'use client';
 
 import { useState } from 'react';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
-import { signIn, confirmSignIn } from 'aws-amplify/auth';
+import { signIn, confirmSignIn, resetPassword, confirmResetPassword } from 'aws-amplify/auth';
 import { toast } from 'react-hot-toast';
-import '@/app/components/auth/amplify-config';
+import '@/app/components/lib/auth/amplify-config';
+
+const isEmail = (value: string) => /\S+@\S+\.\S+/.test(value);
+const isPhoneNumber = (value: string) => /^\+?[1-9]\d{1,14}$/.test(value);
 
 export default function LoginForm() {
-  const [loginType, setLoginType] = useState<'password' | 'otp'>('password');
-  const [step, setStep] = useState<'login' | 'verify'>('login');
+  const [loginType, setLoginType] = useState<'password' | 'otp' | 'resetPassword'>('password');
+  const [step, setStep] = useState<'login' | 'verify' | 'reset'>('login');
   const [userInput, setUserInput] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [code, setCode] = useState('');
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -19,16 +23,45 @@ export default function LoginForm() {
   const handleLogin = async () => {
     setLoading(true);
     const username = userInput.trim();
-    console.log('🚀 Attempting login with:', { loginType, username });
+    const isEmailInput = isEmail(username);
+    const isPhoneInput = isPhoneNumber(username);
+
+    console.log('🔐 Login Attempt:', { loginType, step, username, isEmailInput, isPhoneInput });
+
+    if (!isEmailInput && !isPhoneInput) {
+      toast.error('Please enter a valid email or phone number');
+      setLoading(false);
+      return;
+    }
 
     try {
       if (loginType === 'password') {
         const result = await signIn({ username, password });
-        console.log('✅ Password login result:', result);
+        console.log('✅ Password Login Result:', result);
 
         if (result.isSignedIn) {
           toast.success('Logged in successfully!');
+        } else if (result.nextStep?.signInStep === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED') {
+          const missing = result.nextStep?.missingAttributes || [];
+          console.log('⚠️ Password Reset Required. Missing:', missing);
+
+          if (missing.includes('phone_number')) {
+            toast.error('Phone number required. Switching to OTP login.');
+            setLoginType('otp');
+            setStep('login');
+          } else {
+            toast('Password needs to be reset.');
+            setLoginType('resetPassword');
+            setStep('reset');
+          }
+        } else if (result.nextStep?.signInStep === 'CONFIRM_SIGN_IN_WITH_CUSTOM_CHALLENGE') {
+          console.log('📨 Custom Challenge Initiated (OTP)');
+          setUser(result);
+          setLoginType('otp');
+          setStep('verify');
+          toast.success('OTP challenge sent!');
         } else {
+          console.log('❌ Login failed step:', result.nextStep);
           toast.error('Login failed, please try again');
         }
       } else {
@@ -36,14 +69,13 @@ export default function LoginForm() {
           username,
           options: { authFlowType: 'CUSTOM_WITHOUT_SRP' },
         });
-
-        console.log('📩 OTP challenge initiated:', result);
+        console.log('📨 OTP Login Challenge Result:', result);
         setUser(result);
         setStep('verify');
-        toast.success('OTP sent!');
+        toast.success(`OTP sent to your ${isEmailInput ? 'email' : 'phone'}`);
       }
     } catch (err: any) {
-      console.error('❌ Login error:', err);
+      console.error('🚨 Login Error:', err);
       toast.error(err.message || 'Login failed');
     } finally {
       setLoading(false);
@@ -51,108 +83,165 @@ export default function LoginForm() {
   };
 
   const handleVerify = async () => {
+    console.log('🔍 Verifying OTP with code:', code);
     setLoading(true);
-    console.log('🛂 Verifying OTP with code:', code);
-
     try {
       const result = await confirmSignIn({ challengeResponse: code });
-      console.log('✅ OTP verification result:', result);
+      console.log('✅ OTP Verification Result:', result);
 
       if (result.isSignedIn) {
-        toast.success('OTP verified and logged in!');
-      } else {
-        toast.error('OTP verification failed');
+        toast.success('OTP Verified and Logged in!');
       }
     } catch (err: any) {
-      console.error('❌ OTP verification error:', err);
+      console.error('🚨 OTP Verification Error:', err);
       toast.error(err.message || 'Verification failed');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleResendOTP = async () => {
-    if (!userInput) return toast.error("Enter your email or phone first");
-
-    console.log('🔁 Resending OTP for:', userInput);
+  const handleResetPassword = async () => {
+    const username = userInput.trim();
+    console.log('📤 Sending Reset Code to:', username);
     setLoading(true);
-
     try {
-      const result = await signIn({
-        username: userInput.trim(),
-        options: { authFlowType: 'CUSTOM_WITHOUT_SRP' },
-      });
-
-      console.log('📤 Resend OTP result:', result);
-      setUser(result);
-      toast.success('OTP resent successfully!');
+      const result = await resetPassword({ username });
+      console.log('📨 Reset Code Sent Result:', result);
+      toast.success('Reset code sent to your email/phone');
+      setStep('verify');
     } catch (err: any) {
-      console.error('❌ Resend OTP error:', err);
-      toast.error(err.message || 'Failed to resend OTP');
+      console.error('🚨 Reset Password Error:', err);
+      toast.error(err.message || 'Error sending reset code');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleConfirmResetPassword = async () => {
+    const username = userInput.trim();
+    console.log('🔁 Confirm Reset Password:', { username, code, password });
+
+    if (password !== confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const result = await confirmResetPassword({
+        username,
+        confirmationCode: code,
+        newPassword: password,
+      });
+      console.log('✅ Reset Password Confirmation Result:', result);
+      toast.success('Password reset successful. Please login.');
+      setLoginType('password');
+      setStep('login');
+    } catch (err: any) {
+      console.error('🚨 Confirm Reset Password Error:', err);
+      toast.error(err.message || 'Reset failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderTabs = () => (
+    <div className="flex justify-center space-x-4 mb-4">
+      <button
+        onClick={() => {
+          console.log('🧭 Switched to Password Login');
+          setLoginType('password');
+          setStep('login');
+        }}
+        className={`py-2 px-4 ${loginType === 'password' ? 'bg-blue-500 text-white' : 'bg-gray-800 text-gray-400'}`}
+      >
+        Login with Password
+      </button>
+      <button
+        onClick={() => {
+          console.log('🧭 Switched to OTP Login');
+          setLoginType('otp');
+          setStep('login');
+        }}
+        className={`py-2 px-4 ${loginType === 'otp' ? 'bg-blue-500 text-white' : 'bg-gray-800 text-gray-400'}`}
+      >
+        Login with OTP
+      </button>
+    </div>
+  );
+
   return (
     <div className="max-w-md mx-auto p-6 bg-gray-900 rounded-xl shadow-md text-white">
-      {step === 'login' ? (
+      {renderTabs()}
+
+      {step === 'login' && (
         <>
-          <Input
-            label="Email or Phone"
-            value={userInput}
-            onChange={(e) => setUserInput(e.target.value)}
-          />
+          <Input label="Email or Phone" value={userInput} onChange={(e) => setUserInput(e.target.value)} />
           {loginType === 'password' && (
-            <Input
-              label="Password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <Input label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
           )}
           <Button onClick={handleLogin} disabled={loading}>
-            {loading
-              ? 'Logging in...'
-              : loginType === 'password'
-              ? 'Login with Password'
-              : 'Send OTP'}
+            {loading ? 'Logging in...' : loginType === 'password' ? 'Login with Password' : 'Send OTP'}
           </Button>
-          <p className="mt-4 text-sm text-center">
-            {loginType === 'password' ? (
-              <button
-                onClick={() => setLoginType('otp')}
-                className="text-blue-400 hover:underline"
-              >
-                Use OTP Instead
+          {loginType === 'password' && (
+            <p className="mt-4 text-sm text-center">
+              Forgot password?{' '}
+              <button onClick={() => setLoginType('resetPassword')} className="text-blue-400 hover:underline">
+                Reset it
               </button>
-            ) : (
-              <button
-                onClick={() => setLoginType('password')}
-                className="text-blue-400 hover:underline"
-              >
-                Use Password Instead
-              </button>
-            )}
-          </p>
+            </p>
+          )}
         </>
-      ) : (
+      )}
+
+      {step === 'verify' && loginType === 'otp' && (
         <>
-          <Input
-            label="Enter OTP Code"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-          />
+          <Input label="Enter OTP Code" value={code} onChange={(e) => setCode(e.target.value)} />
           <Button onClick={handleVerify} disabled={loading}>
             {loading ? 'Verifying...' : 'Verify OTP'}
           </Button>
           <button
-            onClick={handleResendOTP}
+            onClick={() => {
+              if (!userInput) return toast.error('Enter your email/phone first');
+              console.log('🔄 Resending OTP to:', userInput);
+              signIn({ username: userInput, options: { authFlowType: 'CUSTOM_WITHOUT_SRP' } })
+                .then((res) => {
+                  console.log('📨 Resend OTP Result:', res);
+                  toast.success('OTP resent!');
+                  setUser(res);
+                })
+                .catch((err) => {
+                  console.error('🚨 Resend OTP Error:', err);
+                  toast.error(err.message || 'Failed to resend');
+                });
+            }}
             className="mt-2 text-sm text-blue-300 hover:underline"
           >
             Resend OTP
           </button>
         </>
+      )}
+
+      {step === 'reset' && loginType === 'resetPassword' && (
+        <>
+          <Input label="Verification Code" value={code} onChange={(e) => setCode(e.target.value)} />
+          <Input label="New Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+          <Input
+            label="Confirm Password"
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+          />
+          <Button onClick={handleConfirmResetPassword} disabled={loading}>
+            {loading ? 'Resetting...' : 'Reset Password'}
+          </Button>
+        </>
+      )}
+
+      {loginType === 'resetPassword' && step === 'login' && (
+        <Button onClick={handleResetPassword} disabled={loading}>
+          {loading ? 'Sending...' : 'Send Reset Code'}
+        </Button>
       )}
     </div>
   );

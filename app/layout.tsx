@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import "@/app/globals.css";
-import '@/app/components/auth/amplify-config';
+import '@/app/components/lib/auth/amplify-config';
 
 
 const inter = Inter({ subsets: ["latin"] });
