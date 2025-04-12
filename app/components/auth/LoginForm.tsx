@@ -12,6 +12,7 @@ const isPhoneNumber = (value: string) => /^\+?[1-9]\d{1,14}$/.test(value);
 
 export default function LoginForm() {
   const [loginType, setLoginType] = useState<'password' | 'otp' | 'resetPassword'>('password');
+  const [selectedOtpChannel, setSelectedOtpChannel] = useState<'email' | 'phone'>('email');
   const [step, setStep] = useState<'login' | 'verify' | 'reset'>('login');
   const [userInput, setUserInput] = useState('');
   const [password, setPassword] = useState('');
@@ -67,7 +68,12 @@ export default function LoginForm() {
       } else {
         const result = await signIn({
           username,
-          options: { authFlowType: 'CUSTOM_WITHOUT_SRP' },
+          options: {
+            authFlowType: 'CUSTOM_WITHOUT_SRP',
+            clientMetadata: {
+              preferredChannel: selectedOtpChannel, // either "email" or "phone"
+            },
+          },
         });
         console.log('📨 OTP Login Challenge Result:', result);
         setUser(result);
@@ -144,6 +150,8 @@ export default function LoginForm() {
       setLoading(false);
     }
   };
+
+  console.log(selectedOtpChannel)
 
   const renderTabs = () => (
     <div className="flex justify-center space-x-4 mb-4">

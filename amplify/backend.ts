@@ -6,11 +6,6 @@ import { createAuthChallenge } from './functions/auth/createAuthChallenge/resour
 import { defineAuthChallenge } from './functions/auth/defineAuthChallenge/resource';
 import { verifyAuthChallengeResponse } from './functions/auth/verifyAuthChallengeResponse/resource';
 
-
-
-
-
-
 defineBackend({
   auth,
   data,
