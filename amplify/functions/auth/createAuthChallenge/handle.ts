@@ -1,97 +1,64 @@
 import { CreateAuthChallengeTriggerHandler } from 'aws-lambda';
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
-import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
 
+// ✅ Set your region and verified sender
 const ses = new SESClient({ region: 'ap-south-1' });
-const sns = new SNSClient({ region: 'ap-south-1' });
+const SENDER_EMAIL = 'your-verified-sender@example.com'; // Must be verified in SES
 
 export const handler: CreateAuthChallengeTriggerHandler = async (event) => {
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  const code = Math.floor(100000 + Math.random() * 900000).toString(); // Generate 6-digit OTP
   const { email, phone_number } = event.request.userAttributes;
-  const preferredChannel = event.request.clientMetadata?.preferredChannel;
 
   console.log('User attributes:', { email, phone_number });
-  console.log('Preferred OTP channel:', preferredChannel);
   console.log(`Generated OTP: ${code}`);
 
-  let message = '';
-  let sent = false;
-
-  if (preferredChannel === 'email' && email) {
+  if (email) {
     try {
       await sendOtpEmail(email, code);
-      message = 'Enter the OTP sent to your email';
-      sent = true;
-    } catch (err) {
-      console.error('Failed to send OTP via email:', err);
+      console.log(`OTP ${code} sent to email: ${email}`);
+    } catch (error) {
+      console.error('Error sending OTP email:', error);
     }
+  } else if (phone_number) {
+    console.log(`Sending OTP ${code} to phone: ${phone_number}`);
+    // Optional: Add actual SMS logic here later
+  } else {
+    console.warn('No email or phone_number found to send OTP.');
   }
 
-  if (!sent && preferredChannel === 'phone' && phone_number) {
-    try {
-      await sendOtpSms(phone_number, code);
-      message = 'Enter the OTP sent to your phone';
-      sent = true;
-    } catch (err) {
-      console.error('Failed to send OTP via SMS:', err);
-    }
-  }
+  event.response.publicChallengeParameters = {
+    message: email
+      ? 'Enter the OTP sent to your email'
+      : 'Enter the OTP sent to your phone',
+  };
 
-  // Fallbacks
-  if (!sent && phone_number) {
-    try {
-      await sendOtpSms(phone_number, code);
-      message = 'Enter the OTP sent to your phone';
-      sent = true;
-    } catch (err) {
-      console.error('Fallback SMS failed:', err);
-    }
-  }
-
-  if (!sent && email) {
-    try {
-      await sendOtpEmail(email, code);
-      message = 'Enter the OTP sent to your email';
-      sent = true;
-    } catch (err) {
-      console.error('Fallback Email failed:', err);
-    }
-  }
-
-  if (!sent) {
-    console.warn('No delivery method available');
-    message = 'OTP delivery failed. Contact support.';
-  }
-
-  event.response.publicChallengeParameters = { message };
   event.response.privateChallengeParameters = { answer: code };
   event.response.challengeMetadata = `OTP-${code}`;
 
   return event;
 };
 
-// --- SES Email
+// ✅ Real SES email sender function
 async function sendOtpEmail(toEmail: string, otp: string) {
-  const command = new SendEmailCommand({
+  const emailCommand = new SendEmailCommand({
     Destination: {
       ToAddresses: [toEmail],
     },
     Message: {
-      Body: {
-        Text: { Data: `Your verification code is: ${otp}` },
+      Subject: {
+        Data: 'Your One-Time Passcode (OTP)',
       },
-      Subject: { Data: 'Your One-Time Passcode (OTP)' },
+      Body: {
+        Text: {
+          Data: `Your verification code is: ${otp}`,
+        },
+        Html: {
+          Data: `<p>Your verification code is:</p><h2>${otp}</h2>`,
+        },
+      },
     },
-    Source: 'your-verified-sender@example.com', // ✅ Must be verified
+    Source: SENDER_EMAIL,
   });
-  await ses.send(command);
-}
 
-// --- SNS SMS
-async function sendOtpSms(phone: string, otp: string) {
-  const command = new PublishCommand({
-    PhoneNumber: phone,
-    Message: `Your verification code is: ${otp}`,
-  });
-  await sns.send(command);
+  await ses.send(emailCommand);
 }
