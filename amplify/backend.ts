@@ -1,8 +1,8 @@
 
 import { defineBackend } from '@aws-amplify/backend';
 
-import { auth } from './auth/resource.js';
-import { data } from './data/resource.js';
+import { auth } from './auth/resource';
+import { data } from './data/resource';
 
 
 const backend = defineBackend({
@@ -16,7 +16,7 @@ const { cfnUserPool, cfnUserPoolClient } = cfnResources;
 
 cfnUserPool.addPropertyOverride(
 	'Policies.SignInPolicy.AllowedFirstAuthFactors',
-	['PASSWORD', 'EMAIL_OTP', 'SMS_OTP']
+	['PASSWORD', 'WEB_AUTHN', 'EMAIL_OTP', 'SMS_OTP']
 );
 
 cfnUserPoolClient.explicitAuthFlows = [
@@ -24,6 +24,9 @@ cfnUserPoolClient.explicitAuthFlows = [
 	'ALLOW_USER_AUTH'
 ];
 
+/* Needed for WebAuthn */
+cfnUserPool.addPropertyOverride('WebAuthnRelyingPartyID', '<RELYING_PARTY>');
+cfnUserPool.addPropertyOverride('WebAuthnUserVerification', 'preferred');
 
 
 

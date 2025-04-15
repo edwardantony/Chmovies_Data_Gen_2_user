@@ -43,7 +43,6 @@ export default function LoginForm() {
       return;
     }
 
-    console.log("USERNAME", username);
     console.log("LOGIN TYPE", loginType);
     console.log("CODE SENT", codeSent);
     console.log("SELECTED OTP CHANNEL", selectedOtpChannel);
@@ -56,9 +55,7 @@ export default function LoginForm() {
         const result = await signIn({ username, password });
         console.log('[Login] SignIn result:', result);
 
-        if (result.isSignedIn) {
-          const user = await fetchAuthSession();
-          console.log("USER: ", user);
+        if (result.isSignedIn) {          
           toast.success('Logged in successfully!');
           console.log('[Login] Signed in successfully');
         } else if (result.nextStep?.signInStep === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED') {
@@ -89,16 +86,16 @@ export default function LoginForm() {
         const result = await signIn({
           username,
           options: {
-            authFlowType: 'CUSTOM_WITHOUT_SRP',
-            clientMetadata: {
-              preferredChannel: selectedOtpChannel,
-            },
+            authFlowType: 'USER_AUTH',
+            preferredChallenge: 'EMAIL_OTP',
           },
         });
         console.log('[OTP Login] Result:', result);
         setUser(result);
         setStep('verify');
         toast.success(`OTP sent to your ${isEmailInput ? 'email' : 'phone'}`);
+        const userSssion = await fetchAuthSession();
+          console.log("USER SESSION: ", userSssion);
       }
     } catch (err: any) {
       console.error('[Login Error]', err);

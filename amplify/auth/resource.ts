@@ -1,7 +1,7 @@
 import { defineAuth } from '@aws-amplify/backend';
-import { createAuthChallenge } from '../functions/auth/create-auth-challenge/resource';
-import { defineAuthChallenge } from '../functions/auth/define-auth-challenge/resource';
-import { verifyAuthChallengeResponse } from '../functions/auth/verify-auth-challenge-response/resource';
+// import { createAuthChallenge } from '../functions/auth/create-auth-challenge/resource';
+// import { defineAuthChallenge } from '../functions/auth/define-auth-challenge/resource';
+// import { verifyAuthChallengeResponse } from '../functions/auth/verify-auth-challenge-response/resource';
 
 export const auth = defineAuth({
   loginWith: {
@@ -17,16 +17,18 @@ export const auth = defineAuth({
     email: { required: true },
     phoneNumber: { required: true }
   },
-  triggers: {
-    defineAuthChallenge,
-    createAuthChallenge,
-    verifyAuthChallengeResponse,
+  accountRecovery: "EMAIL_AND_PHONE_WITHOUT_MFA",
+  senders: {
+    email: {
+      fromEmail: "no-reply@chmovies.com",
+    },
   },
+  // triggers: {
+  //   defineAuthChallenge,
+  //   createAuthChallenge,
+  //   verifyAuthChallengeResponse,
+  // },
 });
-
-
-
-
 
 
 // import { referenceAuth } from '@aws-amplify/backend';
