@@ -212,7 +212,7 @@ export default function LoginForm() {
             onClick={() => {
               if (!userInput) return toast.error('Enter your email/phone first');
               console.log('🔄 Resending OTP to:', userInput);
-              signIn({ username: userInput, options: { authFlowType: 'CUSTOM_WITHOUT_SRP' } })
+              signIn({ username: userInput, options: { authFlowType: 'USER_AUTH', preferredChallenge: "EMAIL_OTP" } })
                 .then((res) => {
                   console.log('📨 Resend OTP Result:', res);
                   toast.success('OTP resent!');
