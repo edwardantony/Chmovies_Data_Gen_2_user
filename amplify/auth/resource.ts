@@ -2,9 +2,9 @@ import { defineAuth } from '@aws-amplify/backend';
 // import * as iam from 'aws-cdk-lib/aws-iam';
 // import * as cognito from 'aws-cdk-lib/aws-cognito';
 // import { Stack } from 'aws-cdk-lib';
-import { createAuthChallenge } from '../functions/auth/create-auth-challenge/resource';
-import { defineAuthChallenge } from '../functions/auth/define-auth-challenge/resource';
-import { verifyAuthChallengeResponse } from '../functions/auth/verify-auth-challenge-response/resource';
+// import { createAuthChallenge } from '../functions/auth/create-auth-challenge/resource';
+// import { defineAuthChallenge } from '../functions/auth/define-auth-challenge/resource';
+// import { verifyAuthChallengeResponse } from '../functions/auth/verify-auth-challenge-response/resource';
 
 export const auth = defineAuth({
   loginWith: {
@@ -26,11 +26,11 @@ export const auth = defineAuth({
   //     fromEmail: "no-reply@chmovies.com",
   //   },
   // },
-  triggers: {
-    defineAuthChallenge,
-    createAuthChallenge,
-    verifyAuthChallengeResponse,
-  },
+  // triggers: {
+  //   defineAuthChallenge,
+  //   createAuthChallenge,
+  //   verifyAuthChallengeResponse,
+  // },
 });
 
 
