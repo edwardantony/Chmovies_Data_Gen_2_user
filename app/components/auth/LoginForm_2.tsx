@@ -3,46 +3,73 @@
 import { useState, FormEvent } from 'react';
 import { signIn, confirmSignIn } from 'aws-amplify/auth';
 import toast from 'react-hot-toast';
-import '@/app/components/lib/auth/amplify-config'
+import { useRouter } from 'next/navigation';
+import '@/app/components/lib/auth/amplify-config';
 
 export default function OtpLogin() {
   const [username, setUsername] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [step, setStep] = useState<'start' | 'otp'>('start');
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const handleStartLogin = async (e: FormEvent) => {
     e.preventDefault();
+    if (!username) {
+      toast.error('Please enter your email or phone');
+      return;
+    }
+
     setIsLoading(true);
     try {
       const { nextStep } = await signIn({
-        username, // email or phone
+        username,
         options: {
           authFlowType: 'USER_AUTH',
-          preferredChallenge: 'SMS_OTP'
         },
       });
 
-      console.debug('signIn nextStep:', nextStep);
-      if (nextStep.signInStep === 'CONTINUE_SIGN_IN_WITH_FIRST_FACTOR_SELECTION') {
-        console.log('Available options:', JSON.stringify(nextStep));
-      
-        // Show UI to select preferred method
-        // e.g., EMAIL_OTP or SMS_OTP
-      }
+      console.debug('SignIn nextStep:', nextStep);
 
-      if (
+      if (nextStep.signInStep === 'CONTINUE_SIGN_IN_WITH_FIRST_FACTOR_SELECTION') {
+        const available = nextStep.availableChallenges || [];
+
+        const preferredChallenge = available.includes('SMS_OTP')
+          ? 'SMS_OTP'
+          : available.includes('EMAIL_OTP')
+          ? 'EMAIL_OTP'
+          : available[0];
+
+        if (!preferredChallenge) {
+          toast.error('No supported challenges available');
+          return;
+        }
+
+        const { nextStep: confirmStep } = await confirmSignIn({
+          challengeResponse: preferredChallenge,
+        });
+
+        if (
+          confirmStep.signInStep === 'CONFIRM_SIGN_IN_WITH_SMS_CODE' ||
+          confirmStep.signInStep === 'CONFIRM_SIGN_IN_WITH_EMAIL_CODE'
+        ) {
+          setStep('otp');
+          toast.success('OTP sent!');
+        } else {
+          toast.error('Unexpected step after challenge selection: ' + confirmStep.signInStep);
+        }
+      } else if (
         nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_SMS_CODE' ||
         nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_EMAIL_CODE'
       ) {
         setStep('otp');
         toast.success('OTP sent!');
       } else {
-        toast.error('Unexpected step: ' + nextStep.signInStep);
+        toast.error('Unexpected sign-in step: ' + nextStep.signInStep);
       }
-    } catch (err) {
-      console.error('SignIn error:', err);
-      toast.error('Failed to start login.');
+    } catch (err: any) {
+      console.error('Sign-in error:', err);
+      toast.error(err.message || 'Failed to start login.');
     } finally {
       setIsLoading(false);
     }
@@ -50,19 +77,26 @@ export default function OtpLogin() {
 
   const handleConfirmOtp = async (e: FormEvent) => {
     e.preventDefault();
+    if (!otpCode) {
+      toast.error('Please enter the OTP');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const { nextStep } = await confirmSignIn({ challengeResponse: otpCode });
+      const { isSignedIn, nextStep } = await confirmSignIn({
+        challengeResponse: otpCode,
+      });
 
-      if (nextStep.signInStep === 'DONE') {
+      if (isSignedIn) {
         toast.success('Login successful!');
-        // Redirect or update UI
+        router.push('/dashboard');
       } else {
-        toast.error('Unexpected step: ' + nextStep.signInStep);
+        toast.error('Unexpected step: ' + nextStep?.signInStep);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('OTP verification failed:', err);
-      toast.error('Invalid OTP or expired.');
+      toast.error(err.message || 'Invalid OTP or expired.');
     } finally {
       setIsLoading(false);
     }
