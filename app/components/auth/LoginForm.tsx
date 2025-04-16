@@ -19,7 +19,7 @@ export default function OtpLogin() {
         username, // email or phone
         options: {
           authFlowType: 'USER_AUTH',
-          preferredChallenge: 'EMAIL_OTP'
+          preferredChallenge: 'SMS_OTP'
         },
       });
 
