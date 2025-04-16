@@ -17,7 +17,6 @@ export const auth = defineAuth({
     email: { required: true },
     phoneNumber: { required: true }
   },
-  accountRecovery: "EMAIL_AND_PHONE_WITHOUT_MFA",
   // senders: {
   //   email: {
   //     fromEmail: "no-reply@chmovies.com",
