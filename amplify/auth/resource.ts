@@ -18,11 +18,11 @@ export const auth = defineAuth({
     phoneNumber: { required: true }
   },
   accountRecovery: "EMAIL_AND_PHONE_WITHOUT_MFA",
-  senders: {
-    email: {
-      fromEmail: "no-reply@chmovies.com",
-    },
-  },
+  // senders: {
+  //   email: {
+  //     fromEmail: "no-reply@chmovies.com",
+  //   },
+  // },
   // triggers: {
   //   defineAuthChallenge,
   //   createAuthChallenge,
