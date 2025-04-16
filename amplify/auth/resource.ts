@@ -37,9 +37,9 @@
 import { referenceAuth } from '@aws-amplify/backend';
 
 export const auth = referenceAuth({
-  userPoolId: 'ap-south-1_LCC7b7JQn',
-  identityPoolId: 'ap-south-1:59c9149a-2c78-447c-b16f-fe259771778a',
-  authRoleArn: 'arn:aws:iam::252476278316:role/amplify-dxyn4iyt81c88-mai-amplifyAuthauthenticatedU-rWZnQRtZ2wg0',
-  unauthRoleArn: 'arn:aws:iam::252476278316:role/amplify-dxyn4iyt81c88-mai-amplifyAuthunauthenticate-l5WDyeKQX9MS',
-  userPoolClientId: '2u96mqb4r1c17dl31h0j5n866f',
+  userPoolId: 'ap-south-1_1b7jE1xrU',
+  identityPoolId: 'ap-south-1:12454be6-c513-4556-b728-bfeef90fd02f',
+  authRoleArn: 'arn:aws:iam::252476278316:role/amplify-chmoviesgen2user--amplifyAuthauthenticatedU-8gS5uJdgbAVy',
+  unauthRoleArn: 'arn:aws:iam::252476278316:role/amplify-chmoviesgen2user--amplifyAuthunauthenticate-BZ3tyDEQpoD5',
+  userPoolClientId: '1co6fchohnaivj14fhb6amfpa4',
 });
