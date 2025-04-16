@@ -1,59 +1,78 @@
 'use client';
 
-import { useState, FormEvent, ChangeEvent } from 'react';
+import { useState, useEffect, FormEvent, ChangeEvent } from 'react';
 import { signUp, confirmSignUp } from 'aws-amplify/auth';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
+import zxcvbn from 'zxcvbn';
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
 import '@/app/components/lib/auth/amplify-config';
 
 const SignupForm = () => {
   const router = useRouter();
-  const [step, setStep] = useState<number>(1);
+  const [step, setStep] = useState(1);
 
-  const [email, setEmail] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
-  const [confirmPassword, setConfirmPassword] = useState<string>('');
-  const [otpCode, setOtpCode] = useState<string>(''); // Use string to support all numeric inputs
-  const [username, setUsername] = useState<string>('');
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [phone, setPhone] = useState<string>('');
+  const [username, setUsername] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const [resendTimeout, setResendTimeout] = useState(60);
+
+  const passwordStrength = zxcvbn(password || '');
+
+  useEffect(() => {
+    if (step === 4 && resendTimeout > 0) {
+      const interval = setInterval(() => {
+        setResendTimeout((prev) => prev - 1);
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [step, resendTimeout]);
 
   const handleNextEmail = (e: FormEvent) => {
     e.preventDefault();
-    if (!email) {
-      toast.error('Email is required');
-      return;
-    }
+    if (!email) return toast.error('Email is required');
     setStep(2);
   };
 
-  const handleNextPassword = async (e: FormEvent) => {
+  const handleNextPassword = (e: FormEvent) => {
     e.preventDefault();
-    if (!password || !confirmPassword) {
-      toast.error('All password fields are required');
-      return;
-    }
-    if (password !== confirmPassword) {
-      toast.error('Passwords do not match');
-      return;
-    }
+    if (!password || !confirmPassword) return toast.error('All password fields are required');
+    if (password !== confirmPassword) return toast.error('Passwords do not match');
+    if (passwordStrength.score < 3) return toast.error('Password is too weak');
+    setStep(3);
+  };
+
+  const handleSubmitPhone = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!phone) return toast.error('Phone number is required');
+    if (!agreeToTerms) return toast.error('You must agree to the terms');
 
     setIsLoading(true);
     try {
       const res = await signUp({
         username: email,
         password,
+        options: {
+          userAttributes: {
+            email,
+            phone_number: phone,
+          },
+        },
       });
       console.debug('Signup success:', res);
-      toast.success('Account created! Check your email for the code.');
+      toast.success('Account created! OTP sent to phone.');
       setUsername(email);
-      setStep(3);
+      setStep(4);
     } catch (err: unknown) {
       console.error('Signup error:', err);
-      if (err instanceof Error) {
-        toast.error(err.message);
-      } else {
-        toast.error('Signup failed');
-      }
+      if (err instanceof Error) toast.error(err.message);
+      else toast.error('Signup failed');
     } finally {
       setIsLoading(false);
     }
@@ -61,26 +80,40 @@ const SignupForm = () => {
 
   const handleVerifyOtp = async (e: FormEvent) => {
     e.preventDefault();
-    if (!otpCode) {
-      toast.error('OTP code is required');
-      return;
-    }
+    if (!otpCode) return toast.error('OTP code is required');
 
     setIsLoading(true);
     try {
       const res = await confirmSignUp({ username, confirmationCode: otpCode });
       console.debug('OTP verification success:', res);
-      toast.success('Account verified! Redirecting to login...');
+      toast.success('Account verified! Redirecting...');
       router.push('/login');
     } catch (err: unknown) {
       console.error('OTP verification failed:', err);
-      if (err instanceof Error) {
-        toast.error(err.message);
-      } else {
-        toast.error('Verification failed');
-      }
+      if (err instanceof Error) toast.error(err.message);
+      else toast.error('Verification failed');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    try {
+      await signUp({
+        username: email,
+        password,
+        options: {
+          userAttributes: {
+            email,
+            phone_number: phone,
+          },
+        },
+      });
+      toast.success('OTP resent to your phone');
+      setResendTimeout(60);
+    } catch (err: any) {
+      toast.error('Failed to resend OTP');
+      console.error(err);
     }
   };
 
@@ -119,17 +152,52 @@ const SignupForm = () => {
             value={confirmPassword}
             onChange={(e: ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value)}
           />
+          {password && (
+            <p className="text-sm">
+              Strength:{' '}
+              <span className={`font-bold ${passwordStrength.score >= 3 ? 'text-green-400' : 'text-red-400'}`}>
+                {passwordStrength.score >= 3 ? 'Strong' : 'Weak'}
+              </span>
+            </p>
+          )}
           <button
             type="submit"
-            disabled={isLoading}
             className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 rounded disabled:opacity-50"
           >
-            {isLoading ? 'Creating...' : 'Create Account'}
+            Next
           </button>
         </form>
       )}
 
       {step === 3 && (
+        <form onSubmit={handleSubmitPhone} className="space-y-4">
+          <PhoneInput
+            defaultCountry="IN"
+            placeholder="Phone number"
+            value={phone}
+            onChange={setPhone}
+            className="w-full p-3 rounded bg-gray-800 border border-gray-700 text-white"
+          />
+          <label className="flex items-center text-sm space-x-2">
+            <input
+              type="checkbox"
+              checked={agreeToTerms}
+              onChange={() => setAgreeToTerms(!agreeToTerms)}
+              className="accent-indigo-600"
+            />
+            <span>I agree to the Terms and Privacy Policy</span>
+          </label>
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 rounded disabled:opacity-50"
+          >
+            {isLoading ? 'Sending OTP...' : 'Send OTP'}
+          </button>
+        </form>
+      )}
+
+      {step === 4 && (
         <form onSubmit={handleVerifyOtp} className="space-y-4">
           <input
             type="text"
@@ -138,8 +206,18 @@ const SignupForm = () => {
             className="w-full p-3 rounded bg-gray-800 border border-gray-700"
             value={otpCode}
             onChange={(e: ChangeEvent<HTMLInputElement>) => setOtpCode(e.target.value)}
-            required
           />
+          <div className="flex justify-between items-center text-sm">
+            <span>Didn’t get code?</span>
+            <button
+              type="button"
+              onClick={handleResendOtp}
+              disabled={resendTimeout > 0}
+              className="text-indigo-400 hover:underline disabled:opacity-50"
+            >
+              {resendTimeout > 0 ? `Resend OTP in ${resendTimeout}s` : 'Resend OTP'}
+            </button>
+          </div>
           <button
             type="submit"
             disabled={isLoading}
