@@ -87,7 +87,7 @@ export default function LoginForm() {
           username,
           options: {
             authFlowType: 'USER_AUTH',
-            preferredChallenge: 'EMAIL_OTP',
+            preferredChallenge: 'SMS_OTP',
           },
         });
         console.log('[OTP Login] Result:', result);
