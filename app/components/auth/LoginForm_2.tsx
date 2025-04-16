@@ -1,118 +1,114 @@
 'use client';
 
-import { useState } from 'react';
-import { signIn, confirmSignIn, resendSignUpCode } from 'aws-amplify/auth';
-import { Input } from '../ui/Input';
-import { Button } from '../ui/Button';
+import { useState, FormEvent } from 'react';
+import { signIn, confirmSignIn } from 'aws-amplify/auth';
 import toast from 'react-hot-toast';
-import '@/app/components/lib/auth/amplify-config';
+import '@/app/components/lib/auth/amplify-config'
 
-export default function LoginForm() {
+export default function OtpLogin() {
   const [username, setUsername] = useState('');
-  const [challengeType, setChallengeType] = useState<'EMAIL_OTP' | 'SMS_OTP' | 'PASSWORD'>('EMAIL_OTP');
   const [otpCode, setOtpCode] = useState('');
-  const [nextStep, setNextStep] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState<'start' | 'otp'>('start');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSignIn = async () => {
-    setLoading(true);
+  const handleStartLogin = async (e: FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
     try {
       const { nextStep } = await signIn({
-        username,
+        username, // email or phone
         options: {
           authFlowType: 'USER_AUTH',
-          preferredChallenge: challengeType,
+          preferredChallenge: 'SMS_OTP'
         },
       });
 
-      if (nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_CUSTOM_CHALLENGE' || nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED') {
-        toast.success('Challenge sent. Check your ' + (challengeType === 'SMS_OTP' ? 'phone' : 'email'));
-        setNextStep(nextStep);
-      } else if (nextStep.signInStep === 'DONE') {
-        toast.success('Logged in!');
+      console.debug('signIn nextStep:', nextStep);
+      if (nextStep.signInStep === 'CONTINUE_SIGN_IN_WITH_FIRST_FACTOR_SELECTION') {
+        console.log('Available options:', JSON.stringify(nextStep));
+      
+        // Show UI to select preferred method
+        // e.g., EMAIL_OTP or SMS_OTP
+      }
+
+      if (
+        nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_SMS_CODE' ||
+        nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_EMAIL_CODE'
+      ) {
+        setStep('otp');
+        toast.success('OTP sent!');
       } else {
         toast.error('Unexpected step: ' + nextStep.signInStep);
       }
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.message || 'Sign-in failed');
+    } catch (err) {
+      console.error('SignIn error:', err);
+      toast.error('Failed to start login.');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const handleConfirm = async () => {
-    setLoading(true);
+  const handleConfirmOtp = async (e: FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
     try {
-      const result = await confirmSignIn({
-        challengeResponse: otpCode,
-      });
+      const { nextStep } = await confirmSignIn({ challengeResponse: otpCode });
 
-      if (result.isSignedIn) {
-        toast.success('Signed in successfully!');
+      if (nextStep.signInStep === 'DONE') {
+        toast.success('Login successful!');
+        // Redirect or update UI
       } else {
-        toast.error('Challenge confirmation failed');
+        toast.error('Unexpected step: ' + nextStep.signInStep);
       }
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.message || 'Invalid code');
+    } catch (err) {
+      console.error('OTP verification failed:', err);
+      toast.error('Invalid OTP or expired.');
     } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResend = async () => {
-    try {
-      await resendSignUpCode();
-      toast.success('Code resent!');
-    } catch (err: any) {
-      console.error(err);
-      toast.error('Failed to resend code');
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto mt-10 p-6 bg-gray-900 text-white rounded-2xl shadow-lg space-y-4">
-      <h2 className="text-2xl font-bold mb-4">Login</h2>
+    <div className="max-w-md mx-auto p-6 bg-gray-900 text-white rounded-2xl shadow-lg space-y-6">
+      <h2 className="text-xl font-bold text-center">Login with OTP</h2>
 
-      <div className="space-y-2">
-        <label className="block text-sm">Email or Phone</label>
-        <Input
-          placeholder="email@example.com or +91xxxxxxxxxx"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
+      {step === 'start' && (
+        <form onSubmit={handleStartLogin} className="space-y-4">
+          <input
+            type="text"
+            placeholder="Email or Phone"
+            className="w-full p-3 bg-gray-800 border border-gray-600 rounded"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 rounded disabled:opacity-50"
+          >
+            {isLoading ? 'Sending OTP...' : 'Send OTP'}
+          </button>
+        </form>
+      )}
 
-        <label className="block text-sm">Login Method</label>
-        <select
-          className="w-full p-2 bg-gray-800 border border-gray-700 rounded"
-          value={challengeType}
-          onChange={(e) => setChallengeType(e.target.value as any)}
-        >
-          <option value="EMAIL_OTP">Email OTP</option>
-          <option value="SMS_OTP">SMS OTP</option>
-          <option value="PASSWORD">Password</option>
-        </select>
-      </div>
-
-      {!nextStep ? (
-        <Button className="w-full mt-4" disabled={loading} onClick={handleSignIn}>
-          {loading ? 'Signing in...' : 'Continue'}
-        </Button>
-      ) : (
-        <div className="space-y-3">
-          <Input
-            placeholder="Enter OTP or Password"
+      {step === 'otp' && (
+        <form onSubmit={handleConfirmOtp} className="space-y-4">
+          <input
+            type="text"
+            inputMode="numeric"
+            placeholder="Enter OTP"
+            className="w-full p-3 bg-gray-800 border border-gray-600 rounded"
             value={otpCode}
             onChange={(e) => setOtpCode(e.target.value)}
           />
-          <Button className="w-full" disabled={loading} onClick={handleConfirm}>
-            {loading ? 'Verifying...' : 'Verify'}
-          </Button>
-          <button onClick={handleResend} className="text-sm text-blue-400 hover:underline">
-            Resend Code
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full py-3 bg-green-600 hover:bg-green-700 rounded disabled:opacity-50"
+          >
+            {isLoading ? 'Verifying...' : 'Verify OTP'}
           </button>
-        </div>
+        </form>
       )}
     </div>
   );
