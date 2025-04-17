@@ -26,41 +26,43 @@ export default function OtpLogin() {
         username,
         options: {
           authFlowType: 'CUSTOM_WITHOUT_SRP',
+          preferredChallenge: "SMS_OTP"
         },
       });
 
       console.debug('SignIn nextStep:', nextStep);
 
-      if (nextStep.signInStep === 'CONTINUE_SIGN_IN_WITH_FIRST_FACTOR_SELECTION') {
-        const available = nextStep.availableChallenges || [];
+      // if (nextStep.signInStep === 'CONTINUE_SIGN_IN_WITH_FIRST_FACTOR_SELECTION') {
+      //   const available = nextStep.availableChallenges || [];
 
-        console.log(available)
+      //   console.log(available)
 
-        const preferredChallenge = available.includes('SMS_OTP')
-          ? 'SMS_OTP'
-          : available.includes('EMAIL_OTP')
-          ? 'EMAIL_OTP'
-          : available[0];
+      //   const preferredChallenge = available.includes('SMS_OTP')
+      //     ? 'SMS_OTP'
+      //     : available.includes('EMAIL_OTP')
+      //     ? 'EMAIL_OTP'
+      //     : available[0];
 
-        if (!preferredChallenge) {
-          toast.error('No supported challenges available');
-          return;
-        }
+      //   if (!preferredChallenge) {
+      //     toast.error('No supported challenges available');
+      //     return;
+      //   }
 
-        const { nextStep: confirmStep } = await confirmSignIn({
-          challengeResponse: preferredChallenge,
-        });
+      //   const { nextStep: confirmStep } = await confirmSignIn({
+      //     challengeResponse: preferredChallenge,
+      //   });
 
-        if (
-          confirmStep.signInStep === 'CONFIRM_SIGN_IN_WITH_SMS_CODE' ||
-          confirmStep.signInStep === 'CONFIRM_SIGN_IN_WITH_EMAIL_CODE'
-        ) {
-          setStep('otp');
-          toast.success('OTP sent!');
-        } else {
-          toast.error('Unexpected step after challenge selection: ' + confirmStep.signInStep);
-        }
-      } else if (
+      //   if (
+      //     confirmStep.signInStep === 'CONFIRM_SIGN_IN_WITH_SMS_CODE' ||
+      //     confirmStep.signInStep === 'CONFIRM_SIGN_IN_WITH_EMAIL_CODE'
+      //   ) {
+      //     setStep('otp');
+      //     toast.success('OTP sent!');
+      //   } else {
+      //     toast.error('Unexpected step after challenge selection: ' + confirmStep.signInStep);
+      //   }
+      // } else 
+      if (
         nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_SMS_CODE' ||
         nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_EMAIL_CODE'
       ) {
