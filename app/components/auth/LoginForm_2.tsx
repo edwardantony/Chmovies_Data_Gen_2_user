@@ -25,7 +25,7 @@ export default function OtpLogin() {
       const { nextStep } = await signIn({
         username,
         options: {
-          authFlowType: 'USER_AUTH',
+          authFlowType: 'CUSTOM_WITHOUT_SRP',
         },
       });
 
@@ -33,6 +33,8 @@ export default function OtpLogin() {
 
       if (nextStep.signInStep === 'CONTINUE_SIGN_IN_WITH_FIRST_FACTOR_SELECTION') {
         const available = nextStep.availableChallenges || [];
+
+        console.log(available)
 
         const preferredChallenge = available.includes('SMS_OTP')
           ? 'SMS_OTP'
