@@ -68,7 +68,7 @@ export default function LoginPage() {
         toast.error('Please enter the OTP')
         return
       }
-      await confirmSignIn({ challengeResponse: form.otp, user: userSession })
+      await confirmSignIn({ challengeResponse: form.otp })
       toast.success('OTP verified, logged in!')
       setShowOtpInput(false)
     } catch (err: any) {
@@ -103,15 +103,15 @@ export default function LoginPage() {
           <>
             {mode === 'email-pass' && (
               <>
-                <Input name="email" type="email" placeholder="Email" onChange={handleChange} />
-                <Input name="password" type="password" placeholder="Password" onChange={handleChange} />
+                <Input label='' name="email" type="email" placeholder="Email" onChange={handleChange} />
+                <Input label='' name="password" type="password" placeholder="Password" onChange={handleChange} />
               </>
             )}
             {mode === 'email-otp' && (
-              <Input name="email" type="email" placeholder="Email for OTP" onChange={handleChange} />
+              <Input label='' name="email" type="email" placeholder="Email for OTP" onChange={handleChange} />
             )}
             {mode === 'phone-otp' && (
-              <Input name="phone" type="tel" placeholder="Phone Number" onChange={handleChange} />
+              <Input label='' name="phone" type="tel" placeholder="Phone Number" onChange={handleChange} />
             )}
             <Button className="w-full mt-4" onClick={handleLogin} disabled={loading}>
               {loading ? 'Processing...' : 'Login'}
@@ -119,7 +119,7 @@ export default function LoginPage() {
           </>
         ) : (
           <>
-            <Input name="otp" type="text" placeholder="Enter OTP" onChange={handleChange} />
+            <Input name="otp" label='' type="text" placeholder="Enter OTP" onChange={handleChange} />
             <Button className="w-full mt-4" onClick={handleConfirmOtp} disabled={loading}>
               {loading ? 'Verifying...' : 'Verify OTP'}
             </Button>

@@ -106,15 +106,15 @@ export default function SignUpPage() {
           <>
             {mode === 'email-pass' && (
               <>
-                <Input name="email" type="email" placeholder="Email" onChange={handleChange} />
-                <Input name="password" type="password" placeholder="Password" onChange={handleChange} />
+                <Input label='' name="email" type="email" placeholder="Email" onChange={handleChange} />
+                <Input label='' name="password" type="password" placeholder="Password" onChange={handleChange} />
               </>
             )}
             {mode === 'email-otp' && (
-              <Input name="email" type="email" placeholder="Email" onChange={handleChange} />
+              <Input label='' name="email" type="email" placeholder="Email" onChange={handleChange} />
             )}
             {mode === 'phone-otp' && (
-              <Input name="phone" type="tel" placeholder="Phone Number (+1...)" onChange={handleChange} />
+              <Input label='' name="phone" type="tel" placeholder="Phone Number (+1...)" onChange={handleChange} />
             )}
             <Button className="w-full mt-4" onClick={handleSignUp} disabled={loading}>
               {loading ? 'Registering...' : 'Sign Up'}
@@ -122,7 +122,7 @@ export default function SignUpPage() {
           </>
         ) : (
           <>
-            <Input name="code" type="text" placeholder="Enter verification code" onChange={handleChange} />
+            <Input label='' name="code" type="text" placeholder="Enter verification code" onChange={handleChange} />
             <Button className="w-full mt-4" onClick={handleVerify} disabled={loading}>
               {loading ? 'Verifying...' : 'Confirm Signup'}
             </Button>
