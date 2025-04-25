@@ -14,11 +14,10 @@ export const auth = defineAuth({
   multifactor: {
     mode: 'OPTIONAL',
     sms: true,
-    totp: false,
+    totp: true,
   },
   userAttributes: {
     email: { required: true },
-    phoneNumber: { required: true }
   },
   accountRecovery: "EMAIL_AND_PHONE_WITHOUT_MFA",
   // senders: {

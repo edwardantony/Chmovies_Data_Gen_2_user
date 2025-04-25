@@ -1,153 +1,131 @@
-'use client';
+'use client'
 
-import { useState, FormEvent } from 'react';
-import { signIn, confirmSignIn } from 'aws-amplify/auth';
-import toast from 'react-hot-toast';
-import { useRouter } from 'next/navigation';
-import '@/app/components/lib/auth/amplify-config';
+import React, { useState } from 'react'
+import { signIn, confirmSignIn } from 'aws-amplify/auth'
+import { Input } from '../ui/Input'
+import { Button } from '../ui/Button'
+import { toast } from 'react-hot-toast'
+import '@/app/components/lib/auth/amplify-config'
 
-export default function OtpLogin() {
-  const [username, setUsername] = useState('');
-  const [otpCode, setOtpCode] = useState('');
-  const [step, setStep] = useState<'start' | 'otp'>('start');
-  const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
+type LoginMode = 'email-pass' | 'email-otp' | 'phone-otp'
 
-  const handleStartLogin = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!username) {
-      toast.error('Please enter your email or phone');
-      return;
-    }
+export default function LoginPage() {
+  const [mode, setMode] = useState<LoginMode>('email-pass')
+  const [form, setForm] = useState({ email: '', password: '', phone: '', otp: '' })
+  const [showOtpInput, setShowOtpInput] = useState(false)
+  const [userSession, setUserSession] = useState<any>(null)
+  const [loading, setLoading] = useState(false)
 
-    setIsLoading(true);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value })
+  }
+
+  const handleLogin = async () => {
+    setLoading(true)
     try {
-      const { nextStep } = await signIn({
-        username,
-        options: {
-          authFlowType: 'CUSTOM_WITHOUT_SRP',
-          preferredChallenge: "SMS_OTP"
-        },
-      });
-
-      console.debug('SignIn nextStep:', nextStep);
-
-      // if (nextStep.signInStep === 'CONTINUE_SIGN_IN_WITH_FIRST_FACTOR_SELECTION') {
-      //   const available = nextStep.availableChallenges || [];
-
-      //   console.log(available)
-
-      //   const preferredChallenge = available.includes('SMS_OTP')
-      //     ? 'SMS_OTP'
-      //     : available.includes('EMAIL_OTP')
-      //     ? 'EMAIL_OTP'
-      //     : available[0];
-
-      //   if (!preferredChallenge) {
-      //     toast.error('No supported challenges available');
-      //     return;
-      //   }
-
-      //   const { nextStep: confirmStep } = await confirmSignIn({
-      //     challengeResponse: preferredChallenge,
-      //   });
-
-      //   if (
-      //     confirmStep.signInStep === 'CONFIRM_SIGN_IN_WITH_SMS_CODE' ||
-      //     confirmStep.signInStep === 'CONFIRM_SIGN_IN_WITH_EMAIL_CODE'
-      //   ) {
-      //     setStep('otp');
-      //     toast.success('OTP sent!');
-      //   } else {
-      //     toast.error('Unexpected step after challenge selection: ' + confirmStep.signInStep);
-      //   }
-      // } else 
-      if (
-        nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_SMS_CODE' ||
-        nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_EMAIL_CODE'
-      ) {
-        setStep('otp');
-        toast.success('OTP sent!');
-      } else {
-        toast.error('Unexpected sign-in step: ' + nextStep.signInStep);
+      if (mode === 'email-pass') {
+        if (!form.email || !form.password) {
+          toast.error('Email and password required')
+          return
+        }
+        await signIn({ username: form.email, password: form.password })
+        toast.success('Logged in with email/password')
+      }
+  
+      else if (mode === 'email-otp') {
+        if (!form.email) {
+          toast.error('Email required for OTP login')
+          return
+        }
+        const user = await signIn({ username: form.email }) // no password!
+        setUserSession(user)
+        setShowOtpInput(true)
+        toast.success('OTP sent to email')
+      }
+  
+      else if (mode === 'phone-otp') {
+        if (!form.phone) {
+          toast.error('Phone number required for OTP login')
+          return
+        }
+        const user = await signIn({ username: form.phone }) // no password!
+        setUserSession(user)
+        setShowOtpInput(true)
+        toast.success('OTP sent to phone')
       }
     } catch (err: any) {
-      console.error('Sign-in error:', err);
-      toast.error(err.message || 'Failed to start login.');
+      toast.error(err.message || 'Login failed')
+      console.error(err)
     } finally {
-      setIsLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
-  const handleConfirmOtp = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!otpCode) {
-      toast.error('Please enter the OTP');
-      return;
-    }
-
-    setIsLoading(true);
+  const handleConfirmOtp = async () => {
+    setLoading(true)
     try {
-      const { isSignedIn, nextStep } = await confirmSignIn({
-        challengeResponse: otpCode,
-      });
-
-      if (isSignedIn) {
-        toast.success('Login successful!');
-        router.push('/dashboard');
-      } else {
-        toast.error('Unexpected step: ' + nextStep?.signInStep);
+      if (!form.otp) {
+        toast.error('Please enter the OTP')
+        return
       }
+      await confirmSignIn({ challengeResponse: form.otp, user: userSession })
+      toast.success('OTP verified, logged in!')
+      setShowOtpInput(false)
     } catch (err: any) {
-      console.error('OTP verification failed:', err);
-      toast.error(err.message || 'Invalid OTP or expired.');
+      toast.error('Invalid OTP or session expired')
+      console.error(err)
     } finally {
-      setIsLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
-    <div className="max-w-md mx-auto p-6 bg-gray-900 text-white rounded-2xl shadow-lg space-y-6">
-      <h2 className="text-xl font-bold text-center">Login with OTP</h2>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
+      <div className="p-6 bg-white rounded shadow-md w-full max-w-md space-y-4">
+        <div className="flex justify-between mb-4">
+          {(['email-pass', 'email-otp', 'phone-otp'] as LoginMode[]).map((m) => (
+            <Button
+              key={m}
+              variant={mode === m ? 'primary' : 'ghost'}
+              onClick={() => {
+                setMode(m)
+                setShowOtpInput(false)
+                setForm({ email: '', password: '', phone: '', otp: '' })
+              }}
+              className="w-full"
+            >
+              {m.replace('-', ' ').toUpperCase()}
+            </Button>
+          ))}
+        </div>
 
-      {step === 'start' && (
-        <form onSubmit={handleStartLogin} className="space-y-4">
-          <input
-            type="text"
-            placeholder="Email or Phone"
-            className="w-full p-3 bg-gray-800 border border-gray-600 rounded"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-          />
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 rounded disabled:opacity-50"
-          >
-            {isLoading ? 'Sending OTP...' : 'Send OTP'}
-          </button>
-        </form>
-      )}
-
-      {step === 'otp' && (
-        <form onSubmit={handleConfirmOtp} className="space-y-4">
-          <input
-            type="text"
-            inputMode="numeric"
-            placeholder="Enter OTP"
-            className="w-full p-3 bg-gray-800 border border-gray-600 rounded"
-            value={otpCode}
-            onChange={(e) => setOtpCode(e.target.value)}
-          />
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full py-3 bg-green-600 hover:bg-green-700 rounded disabled:opacity-50"
-          >
-            {isLoading ? 'Verifying...' : 'Verify OTP'}
-          </button>
-        </form>
-      )}
+        {!showOtpInput ? (
+          <>
+            {mode === 'email-pass' && (
+              <>
+                <Input name="email" type="email" placeholder="Email" onChange={handleChange} />
+                <Input name="password" type="password" placeholder="Password" onChange={handleChange} />
+              </>
+            )}
+            {mode === 'email-otp' && (
+              <Input name="email" type="email" placeholder="Email for OTP" onChange={handleChange} />
+            )}
+            {mode === 'phone-otp' && (
+              <Input name="phone" type="tel" placeholder="Phone Number" onChange={handleChange} />
+            )}
+            <Button className="w-full mt-4" onClick={handleLogin} disabled={loading}>
+              {loading ? 'Processing...' : 'Login'}
+            </Button>
+          </>
+        ) : (
+          <>
+            <Input name="otp" type="text" placeholder="Enter OTP" onChange={handleChange} />
+            <Button className="w-full mt-4" onClick={handleConfirmOtp} disabled={loading}>
+              {loading ? 'Verifying...' : 'Verify OTP'}
+            </Button>
+          </>
+        )}
+      </div>
     </div>
-  );
+  )
 }
