@@ -37,7 +37,7 @@ export default function LoginPage() {
           toast.error('Email required for OTP login')
           return
         }
-        const user = await signIn({ username: form.email }) // no password!
+        const user = await signIn({ username: form.email })
         setUserSession(user)
         setShowOtpInput(true)
         toast.success('OTP sent to email')
