@@ -28,6 +28,7 @@ export default function LoginPage() {
           toast.error('Email and password required')
           return
         }
+  
         await signIn({ username: form.email, password: form.password })
         toast.success('Logged in with email/password')
       }
@@ -37,7 +38,15 @@ export default function LoginPage() {
           toast.error('Email required for OTP login')
           return
         }
-        const user = await signIn({ username: form.email })
+  
+        const user = await signIn({
+          username: form.email,
+          options: {
+            authFlowType: 'USER_AUTH',
+            preferredChallenge: 'SMS_OTP'
+          }
+        })
+  
         setUserSession(user)
         setShowOtpInput(true)
         toast.success('OTP sent to email')
@@ -48,11 +57,20 @@ export default function LoginPage() {
           toast.error('Phone number required for OTP login')
           return
         }
-        const user = await signIn({ username: form.phone }) // no password!
+  
+        const user = await signIn({
+          username: form.phone,
+          options: {
+            authFlowType: 'USER_AUTH',
+            preferredChallenge: 'SMS_OTP'
+          }
+        })
+  
         setUserSession(user)
         setShowOtpInput(true)
         toast.success('OTP sent to phone')
       }
+  
     } catch (err: any) {
       toast.error(err.message || 'Login failed')
       console.error(err)
@@ -60,6 +78,7 @@ export default function LoginPage() {
       setLoading(false)
     }
   }
+  
 
   const handleConfirmOtp = async () => {
     setLoading(true)

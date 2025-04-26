@@ -1,4 +1,4 @@
-import LogoutButton from '@/app/components/auth/LogoutButton';
+import LogoutButton from '@/app/components/auth/SiginoutForm';
 
 export default function DashboardPage() {
   return (

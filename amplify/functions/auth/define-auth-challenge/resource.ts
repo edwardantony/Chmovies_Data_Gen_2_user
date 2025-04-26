@@ -1,7 +1,0 @@
-import { defineFunction } from "@aws-amplify/backend"
-
-export const defineAuthChallenge = defineFunction({
-  name: "define-auth-challenge",
-  resourceGroupName: 'auth',
-  entry: './handler.ts'
-})
