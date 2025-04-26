@@ -85,10 +85,10 @@ export default function LoginForm() {
         console.log('[OTP Login] Sending OTP...');
         const result = await signIn({
           username,
-          options: {
-            authFlowType: 'USER_AUTH',
-            preferredChallenge: 'SMS_OTP',
-          },
+          // options: {
+          //   authFlowType: 'USER_AUTH',
+          //   preferredChallenge: 'EMAIL_OTP',
+          // },
         });
         console.log('[OTP Login] Result:', result);
         setUser(result);
@@ -236,10 +236,8 @@ export default function LoginForm() {
               signIn({
                 username: userInput,
                 options: {
-                  authFlowType: 'CUSTOM_WITHOUT_SRP',
-                  clientMetadata: {
-                    preferredChannel: selectedOtpChannel,
-                  },
+                  authFlowType: 'USER_AUTH',
+                  preferredChallenge: 'SMS_OTP',
                 },
               })
                 .then((res) => {
