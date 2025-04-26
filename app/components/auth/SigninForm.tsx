@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation'
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import {
@@ -12,6 +13,7 @@ import {
 } from 'aws-amplify/auth';
 import { toast } from 'react-hot-toast';
 import '@/app/components/lib/auth/amplify-config';
+
 
 const isEmail = (value: string) => /\S+@\S+\.\S+/.test(value);
 const isPhoneNumber = (value: string) => /^\+?[1-9]\d{1,14}$/.test(value);
@@ -27,7 +29,7 @@ export default function LoginForm() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [codeSent, setCodeSent] = useState(false);
-
+  const router = useRouter()
   
 
   const handleLogin = async () => {
@@ -57,7 +59,7 @@ export default function LoginForm() {
 
         if (result.isSignedIn) {          
           toast.success('Logged in successfully!');
-          console.log('[Login] Signed in successfully');
+          router.replace('/dashboard')
         } else if (result.nextStep?.signInStep === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED') {
           const missing = result.nextStep?.missingAttributes || [];
           console.log('[Login] New password required. Missing:', missing);
@@ -85,10 +87,10 @@ export default function LoginForm() {
         console.log('[OTP Login] Sending OTP...');
         const result = await signIn({
           username,
-          // options: {
-          //   authFlowType: 'USER_AUTH',
-          //   preferredChallenge: 'EMAIL_OTP',
-          // },
+          options: {
+            authFlowType: 'USER_AUTH',
+            preferredChallenge: 'SMS_OTP',
+          },
         });
         console.log('[OTP Login] Result:', result);
         setUser(result);

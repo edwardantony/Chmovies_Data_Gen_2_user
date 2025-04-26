@@ -1,10 +1,24 @@
-import LogoutButton from '@/app/components/auth/SiginoutForm';
+// app/dashboard/page.tsx
+'use client';
 
-export default function DashboardPage() {
+import dynamic from 'next/dynamic';
+import { Suspense } from 'react';
+import LoadingSpinner from '@/app/components/ui/LoadingSpinner';
+
+// Disable SSR for AuthGuard since it uses browser APIs
+const AuthGuard = dynamic(() => import('@/app/components/auth/AuthGuard'), { 
+  loading: () => <LoadingSpinner fullScreen />
+  }
+);
+
+export default function Dashboard() {
   return (
-    <div className="p-8 text-white bg-gray-900 min-h-screen">
-      <h1 className="text-2xl font-bold mb-4">Welcome to Dashboard</h1>
-      <LogoutButton />
-    </div>
+    <Suspense fallback={<LoadingSpinner fullScreen />}>
+      <AuthGuard>
+        <div className="p-4">
+          <h1 className="text-2xl font-bold">Dashboard</h1>
+        </div>
+      </AuthGuard>
+    </Suspense>
   );
 }
