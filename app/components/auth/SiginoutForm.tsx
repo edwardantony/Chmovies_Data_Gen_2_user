@@ -13,7 +13,7 @@ export default function signout() {
   const performLogout = async () => {
     try {
       // Clear client-side data first
-      localStorage.removeItem('authSession');
+      localStorage.removeItem('userSession');
       sessionStorage.clear();
 
       await signOut({ global: true });
